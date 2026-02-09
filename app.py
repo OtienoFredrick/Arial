@@ -14,7 +14,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # CHANGE THIS PASSWORD!
-ADMIN_PASSWORD = "mimiNiAdmin2025"  # ← Your secret password
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD')  # ← Your secret password
+if not ADMIN_PASSWORD:
+    ADMIN_PASSWORD = "fallback-secret-for-local-testing"  # only for dev
+    print("Warning: Using fallback password – set ADMIN_PASSWORD env var in production!")
 
 class Contact(db.Model):
     phone = db.Column(db.String(30), primary_key=True)
