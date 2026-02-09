@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Search Waoshaji{% endblock %}
+
+{% block content %}
+    <h2>Search Contacts</h2>
+    <form method="POST">
+        <input type="text" name="query" placeholder="Jina au namba..." required>
+        <select name="search_type">
+            <option value="name">Tafuta kwa Jina (partial)</option>
+            <option value="phone">Tafuta kwa Namba (exact)</option>
+        </select>
+        <input type="submit" value="Tafuta">
+    </form>
+    <a href="/" class="back">← Back to Home</a>
+{% endblock %}

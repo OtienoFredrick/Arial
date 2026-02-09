@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Waoshaji Directory{% endblock %}
+
+{% block content %}
+
+    <h2>Tafuta Waoshaji Contacts</h2>
+
+    <form method="POST">
+        <input type="text" name="query" placeholder="Jina au namba..." value="{{ query }}" required autofocus>
+        <select name="search_type">
+            <option value="name" {% if search_type == 'name' or search_type == '' %}selected{% endif %}>
+                Kwa Jina (partial match)
+            </option>
+            <option value="phone" {% if search_type == 'phone' %}selected{% endif %}>
+                Kwa Namba (exact match)
+            </option>
+        </select>
+        <input type="submit" value="Tafuta">
+    </form>
+
+    <hr style="margin: 2rem 0; border-color: #e5e7eb;">
+
+    {% if show_full_list %}
+        <h3>Orodha Kamili ya Waoshaji ({{ total_count }} entries)</h3>
+    {% elif search_type == 'phone' %}
+        <h3>Matokeo kwa namba: {{ query }}</h3>
+    {% else %}
+        <h3>Matokeo kwa "{{ query }}"</h3>
+    {% endif %}
+
+    {% if results %}
+        <ul class="results" style="margin-top: 1.5rem; padding: 0; list-style: none;">
+            {% for contact in results %}
+                <li style="
+                    padding: 1.4rem;
+                    margin-bottom: 1rem;
+                    background: #f0f9ff;
+                    border-left: 6px solid #2563eb;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                ">
+                    <div style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        flex-wrap: wrap;
+                        gap: 1rem;
+                    ">
+                        <div>
+                            <strong style="font-size: 1.35rem; color: #1e40af;">
+                                {{ contact.name }}
+                            </strong>
+                        </div>
+                        <div style="
+                            font-family: monospace;
+                            background: #eff6ff;
+                            padding: 0.6rem 1.2rem;
+                            border-radius: 8px;
+                            color: #1e40af;
+                            font-weight: bold;
+                            font-size: 1.25rem;
+                        ">
+                            📞 {{ contact.phone }}
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p style="text-align: center; color: #6b7280; font-style: italic; margin: 3rem 0; font-size: 1.1rem;">
+            {% if show_full_list %}
+                Hakuna waoshaji waliorekodiwa bado.
+            {% else %}
+                Hakuna matokeo yaliyopatikana.
+            {% endif %}
+        </p>
+    {% endif %}
+
+{% endblock %}

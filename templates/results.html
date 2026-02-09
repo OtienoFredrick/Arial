@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Matokeo – Waoshaji Directory{% endblock %}
+
+{% block content %}
+    <h2>Matokeo kwa "{{ query }}"</h2>
+
+    {% if results %}
+        <ul class="results">
+            {% for contact in results %}
+                <li>
+                    <strong>{{ contact.name }}</strong><br>
+                    {{ contact.phone }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p style="text-align:center; color:#6b7280;">
+            Hakuna matokeo yaliyopatikana.
+        </p>
+    {% endif %}
+
+    <a href="/search" class="back">Tafuta tena</a> | 
+    <a href="/" class="back">Home</a>
+{% endblock %}
