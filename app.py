@@ -4,19 +4,21 @@ import os
 
 app = Flask(__name__)
 
+# Database configuration – uses DATABASE_URL from env (Postgres on Render) or local SQLite
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
     'DATABASE_URL',
     'sqlite:///' + os.path.join(basedir, 'waoshaji.db')
 )
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ECHO'] = False  # Set to True for query debugging
 
 db = SQLAlchemy(app)
 
-# CHANGE THIS PASSWORD!
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD')  # ← Your secret password
+# Admin password – use env var on Render, fallback for local
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD')
 if not ADMIN_PASSWORD:
-    ADMIN_PASSWORD = "fallback-secret-for-local-testing"  # only for dev
+    ADMIN_PASSWORD = "fallback-secret-for-local-testing"
     print("Warning: Using fallback password – set ADMIN_PASSWORD env var in production!")
 
 class Contact(db.Model):
@@ -26,6 +28,7 @@ class Contact(db.Model):
     def __repr__(self):
         return f"<Contact {self.name} - {self.phone}>"
 
+# Create tables if they don't exist (safe for both SQLite and Postgres)
 with app.app_context():
     db.create_all()
 
@@ -39,7 +42,6 @@ def index():
     if request.method == 'POST':
         query = request.form.get('query', '').strip()
         search_type = request.form.get('search_type', 'name')
-
         if query:
             if search_type == 'phone':
                 contact = Contact.query.get(query)
@@ -50,10 +52,8 @@ def index():
                     Contact.name.ilike(f'%{query}%')
                 ).order_by(Contact.name).all()
     else:
-        # On GET (page load) → show ALL contacts
         results = Contact.query.order_by(Contact.name).all()
 
-    # Get total count for display
     total_count = Contact.query.count()
 
     return render_template(
@@ -62,10 +62,10 @@ def index():
         query=query,
         search_type=search_type,
         total_count=total_count,
-        show_full_list=(request.method == 'GET')  # Used to change heading
+        show_full_list=(request.method == 'GET')
     )
 
-# Admin-only routes (hidden – access by typing URL directly)
+# Admin-only: Add contact
 @app.route('/add', methods=['GET', 'POST'])
 def add():
     error = None
@@ -83,11 +83,17 @@ def add():
                     error = f"Phone {phone} already exists!"
                 else:
                     new_contact = Contact(phone=phone, name=name)
-                    db.session.add(new_contact)
-                    db.session.commit()
-                    return redirect(url_for('index'))
+                    try:
+                        db.session.add(new_contact)
+                        db.session.commit()
+                        print(f"Added contact: {name} - {phone}")
+                        return redirect(url_for('index'))
+                    except Exception as e:
+                        db.session.rollback()
+                        error = f"Add failed: {str(e)}"
     return render_template('add.html', error=error)
 
+# Admin-only: Remove contact
 @app.route('/remove', methods=['GET', 'POST'])
 def remove():
     error = None
@@ -98,9 +104,14 @@ def remove():
             phone = request.form.get('phone').strip()
             contact = Contact.query.get(phone)
             if contact:
-                db.session.delete(contact)
-                db.session.commit()
-                return redirect(url_for('index'))
+                try:
+                    db.session.delete(contact)
+                    db.session.commit()
+                    print(f"Deleted contact: {contact.name} - {phone}")
+                    return redirect(url_for('index'))
+                except Exception as e:
+                    db.session.rollback()
+                    error = f"Delete failed: {str(e)}"
             else:
                 error = f"No contact with phone {phone}"
     return render_template('remove.html', error=error)
